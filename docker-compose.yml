@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile
     container_name: uno-game
     ports:
-      - "8081:80"
+      - "80:80"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]

@@ -1,0 +1,19 @@
+# Docker Compose 配置文件
+# 注意: 从 Compose V2 开始，version 字段已废弃
+# 使用 `docker compose` 命令替代 `docker-compose`
+
+services:
+  uno-game:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uno-game
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

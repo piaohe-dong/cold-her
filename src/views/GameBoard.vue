@@ -22,30 +22,8 @@
     
     <!-- 游戏主区域 -->
     <div class="game-content">
-      <!-- 左侧:玩家区域 -->
-      <div class="players-area">
-        <div class="current-turn-indicator" v-if="currentPlayer">
-          当前回合: <strong>{{ currentPlayer.name }}</strong>
-          <span v-if="currentPlayer.isAI" class="ai-thinking">(思考中...)</span>
-        </div>
-        
-        <div class="players-grid">
-          <PlayerArea
-            v-for="(player, index) in gameState.players"
-            :key="player.id"
-            :player="player"
-            :is-current-player="index === gameState.currentPlayerIndex"
-            :show-hand="true"
-            :show-accuse-cards="false"
-            :show-identity="gameState.phase === 'game_over'"
-            :can-select-card="false"
-            :selected-card-index="-1"
-          />
-        </div>
-      </div>
-      
-      <!-- 右侧:调和区 + 胜利条件 -->
-      <div class="right-panel">
+           <!-- 右侧:调和区 + 胜利条件 -->
+      <div class="left-panel">
         <!-- 调和区 -->
         <div class="harmony-panel-compact">
           <h3>🧪 调和区</h3>
@@ -83,7 +61,31 @@
             {{ showHarmonyCards ? '查看中...' : '查看卡牌' }}
           </button>
         </div>
+      </div>
+      <!-- 左侧:玩家区域 -->
+      <div class="players-area">
+        <div class="current-turn-indicator" v-if="currentPlayer">
+          当前回合: <strong>{{ currentPlayer.name }}</strong>
+          <span v-if="currentPlayer.isAI" class="ai-thinking">(思考中...)</span>
+        </div>
         
+        <div class="players-grid">
+          <PlayerArea
+            v-for="(player, index) in gameState.players"
+            :key="player.id"
+            :player="player"
+            :is-current-player="index === gameState.currentPlayerIndex"
+            :show-hand="true"
+            :show-accuse-cards="false"
+            :show-identity="gameState.phase === 'game_over'"
+            :can-select-card="false"
+            :selected-card-index="-1"
+          />
+        </div>
+      </div>
+      
+      <!-- 右侧:调和区 + 胜利条件 -->
+      <div class="right-panel">
         <!-- 胜利条件说明 -->
         <div class="win-conditions-panel">
           <h3>🏆 胜利条件</h3>

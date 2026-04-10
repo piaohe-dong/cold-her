@@ -1,5 +1,5 @@
 import type { Card, Player } from '../types/game';
-import { SkillType, Faction } from '../types/game';
+import { SkillType } from '../types/game';
 
 /**
  * 执行卡牌技能
@@ -59,7 +59,7 @@ export function executeSkill(
  * 学生会长/查看1张手牌
  */
 function executeViewOneCard(
-  currentPlayer: Player,
+  _currentPlayer: Player,
   allPlayers: Player[],
   params: { targetPlayerId: string; cardIndex: number }
 ): { success: boolean; message: string } {
@@ -83,7 +83,7 @@ function executeViewOneCard(
  * 风纪委员/查看所有手牌
  */
 function executeViewAllCards(
-  currentPlayer: Player,
+  _currentPlayer: Player,
   allPlayers: Player[],
   params: { targetPlayerId: string }
 ): { success: boolean; message: string } {
@@ -225,7 +225,7 @@ function executeForceHarmonize(
  * 新闻部/查看身份牌
  */
 function executeViewIdentity(
-  currentPlayer: Player,
+  _currentPlayer: Player,
   allPlayers: Player[],
   params: { targetPlayerId: string }
 ): { success: boolean; message: string } {
@@ -301,7 +301,7 @@ function executeGiveCard(
  */
 function executeInfectHarmonize(
   currentPlayer: Player,
-  harmonyZone: Card[],
+  _harmonyZone: Card[],
   params: { cardIndex: number }
 ): { success: boolean; message: string } {
   if (currentPlayer.hand.length === 0) {
@@ -324,7 +324,7 @@ function executeInfectHarmonize(
 function executeFlexiblePlace(
   currentPlayer: Player,
   allPlayers: Player[],
-  harmonyZone: Card[],
+  _harmonyZone: Card[],
   params: { cardIndex: number; target: 'harmony' | 'accuse'; accuseTargetId?: string }
 ): { success: boolean; message: string } {
   if (currentPlayer.hand.length === 0) {
@@ -380,7 +380,7 @@ function executeTakeUsedCard(
  * 共犯/移动质疑位置的牌
  */
 function executeMoveAccuseCard(
-  currentPlayer: Player,
+  _currentPlayer: Player,
   allPlayers: Player[],
   params: { sourcePlayerId: string; targetPlayerId: string; accuseCardIndex: number }
 ): { success: boolean; message: string; updatedPlayers?: Player[] } {

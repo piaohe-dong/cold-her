@@ -1,5 +1,5 @@
 import type { GameState, Player, Card } from '../types/game';
-import { ActionType, Faction } from '../types/game';
+import { ActionType } from '../types/game';
 
 /**
  * AI决策接口
@@ -71,7 +71,7 @@ function evaluateStrategy(state: GameState, player: Player): 'harmonize' | 'accu
 /**
  * 做出调和决策
  */
-function makeHarmonizeDecision(player: Player, state: GameState): AIDecision | null {
+function makeHarmonizeDecision(player: Player, _state: GameState): AIDecision | null {
   // 选择强度最低的卡牌进行调和
   let minStrength = Infinity;
   let cardIndex = 0;

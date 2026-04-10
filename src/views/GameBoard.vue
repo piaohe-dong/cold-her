@@ -216,8 +216,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import type { ActionType, Player } from '../types/game';
+import { ref, computed, watch } from 'vue';
+import type { ActionType } from '../types/game';
 import { ActionType as ActionTypeEnum } from '../types/game';
 import { getGameState, getMessageLog, playerAction, resetGame } from '../stores/gameStore';
 import Card from '../components/Card.vue';
@@ -266,20 +266,7 @@ const harmonyTotal = computed(() => {
   return gameState.harmonyZone.reduce((sum, card) => sum + card.strength, 0);
 });
 
-const harmonyDisplayValue = computed(() => {
-  if (showHarmonyCards.value) {
-    return `${harmonyTotal.value} / ${gameState.harmonyTarget}`;
-  }
-  
-  if (lastKnownHarmonyValue.value !== null) {
-    if (harmonyChanged.value) {
-      return `${lastKnownHarmonyValue.value} + ? / ${gameState.harmonyTarget}`;
-    }
-    return `${lastKnownHarmonyValue.value} / ${gameState.harmonyTarget}`;
-  }
-  
-  return `? / ${gameState.harmonyTarget}`;
-});
+
 
 // 计算当前是否是玩家回合
 const isCurrentPlayerTurn = computed(() => {

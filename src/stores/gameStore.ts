@@ -1,9 +1,9 @@
 import { reactive } from 'vue';
-import type { GameState, GameResults } from '../types/game';
+import type { GameState } from '../types/game';
 import { GamePhase, ActionType } from '../types/game';
 import { initializeGame, executeAction, checkIdentityLock, checkGameOver, nextTurn, getCurrentPlayer } from '../logic/gameEngine';
 import { resolveGame } from '../logic/resolution';
-import { executeAITurn, makeAIDecision } from '../logic/ai';
+import { executeAITurn } from '../logic/ai';
 
 // 游戏状态
 const state = reactive<GameState>({
@@ -203,7 +203,7 @@ async function resolveGamePhase() {
   
   await delay(1000);
   
-  state.players.forEach((player, index) => {
+  state.players.forEach((player, _index) => {
     const identityName = player.identityCard?.name || '未知';
     addMessage(`${player.name}的身份: ${identityName}`);
   });

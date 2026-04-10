@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { Player, Card } from '../types/game';
+import type { Player } from '../types/game';
 
 const props = defineProps<{
   title: string;

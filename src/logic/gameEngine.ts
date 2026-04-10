@@ -1,5 +1,5 @@
 import type { Card, Player, GameState } from '../types/game';
-import { GamePhase, ActionType, Faction, HARMONY_TARGETS } from '../types/game';
+import { GamePhase, ActionType, HARMONY_TARGETS } from '../types/game';
 import { getCardsForPlayerCount, createCardInstance } from '../data/cards';
 import { executeSkill } from './skills';
 
@@ -12,7 +12,7 @@ export function initializeGame(playerCount: number, aiCount: number): GameState 
   
   // 生成卡牌实例
   let allCards: Card[] = [];
-  cardDataList.forEach((cardData, index) => {
+  cardDataList.forEach((cardData, _index) => {
     for (let i = 0; i < cardData.count; i++) {
       allCards.push(createCardInstance(cardData, allCards.length));
     }
@@ -92,8 +92,6 @@ export function executeAction(
   if (cardIndex < 0 || cardIndex >= currentPlayer.hand.length) {
     return { success: false, message: '无效的卡牌索引' };
   }
-  
-  const card = currentPlayer.hand[cardIndex];
   
   switch (actionType) {
     case ActionType.USE_SKILL:

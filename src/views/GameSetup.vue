@@ -88,7 +88,7 @@
 import { ref, computed } from 'vue';
 import { HARMONY_TARGETS } from '../types/game';
 import { getCardsForPlayerCount } from '../data/cards';
-import { startGame, resetGame } from '../stores/gameStore';
+import { startGame } from '../stores/gameStore';
 
 const router = { push: (path: string) => window.location.hash = path };
 

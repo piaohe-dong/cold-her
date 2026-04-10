@@ -146,8 +146,7 @@ const CARDS_TO_REMOVE_3_PLAYERS = [
   '归宅部'
 ];
 
-// 4人或6人局需要移除的卡牌名称
-const CARDS_TO_REMOVE_4_6_PLAYERS = ['图书委员'];
+// 4人或6人局需要移除的卡牌名称 (目前未使用，保留注释)
 
 /**
  * 根据玩家数量获取卡牌列表

@@ -1,5 +1,5 @@
-import type { GameState, Player, GameResults } from '../types/game';
-import { GamePhase, Faction } from '../types/game';
+import type { GameState, GameResults } from '../types/game';
+import { Faction } from '../types/game';
 
 /**
  * 执行游戏结算

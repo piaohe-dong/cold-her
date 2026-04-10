@@ -3,11 +3,11 @@
 # 使用 `docker compose` 命令替代 `docker-compose`
 
 services:
-  uno-game:
+  cold-her:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: uno-game
+    container_name: cold-her
     ports:
       - "8081:8081"
     restart: unless-stopped

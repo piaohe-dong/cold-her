@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile
     container_name: cold-her
     ports:
-      - "80:80"
+      - "5173:80"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]

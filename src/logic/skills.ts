@@ -44,6 +44,12 @@ export function executeSkill(
       return executeInfectHarmonize(currentPlayer, harmonyZone, params);
     case SkillType.FLEXIBLE_PLACE:
       return executeFlexiblePlace(currentPlayer, allPlayers, harmonyZone, params);
+    case SkillType.TAKE_USED_CARD:
+      return executeTakeUsedCard(currentPlayer, allPlayers, params);
+    case SkillType.MOVE_ACCUSE_CARD:
+      return executeMoveAccuseCard(currentPlayer, allPlayers, params);
+    case SkillType.PASS_CARD_LEFT:
+      return executePassCardLeft(allPlayers, params);
     default:
       return { success: false, message: '无技能或技能类型未知' };
   }
@@ -340,4 +346,108 @@ function executeFlexiblePlace(
     }
     return { success: true, message: `将${card.name}放入${targetPlayer.name}的质疑区` };
   }
+}
+
+/**
+ * 保健委员/夺走已使用的牌
+ */
+function executeTakeUsedCard(
+  currentPlayer: Player,
+  allPlayers: Player[],
+  params: { targetPlayerId: string; usedCardIndex: number }
+): { success: boolean; message: string; updatedPlayers?: Player[] } {
+  const targetPlayer = allPlayers.find(p => p.id === params.targetPlayerId);
+  if (!targetPlayer || targetPlayer.usedCards.length === 0) {
+    return { success: false, message: '目标玩家无效或没有已使用的牌' };
+  }
+  
+  if (params.usedCardIndex < 0 || params.usedCardIndex >= targetPlayer.usedCards.length) {
+    return { success: false, message: '卡牌索引无效' };
+  }
+  
+  // 夺走目标玩家的已使用卡牌
+  const takenCard = targetPlayer.usedCards.splice(params.usedCardIndex, 1)[0];
+  currentPlayer.usedCards.push(takenCard);
+  
+  return { 
+    success: true, 
+    message: `从${targetPlayer.name}处夺走了已使用的${takenCard.name}`,
+    updatedPlayers: allPlayers
+  };
+}
+
+/**
+ * 共犯/移动质疑位置的牌
+ */
+function executeMoveAccuseCard(
+  currentPlayer: Player,
+  allPlayers: Player[],
+  params: { sourcePlayerId: string; targetPlayerId: string; accuseCardIndex: number }
+): { success: boolean; message: string; updatedPlayers?: Player[] } {
+  const sourcePlayer = allPlayers.find(p => p.id === params.sourcePlayerId);
+  const targetPlayer = allPlayers.find(p => p.id === params.targetPlayerId);
+  
+  if (!sourcePlayer || !targetPlayer || sourcePlayer.isLocked || targetPlayer.isLocked) {
+    return { success: false, message: '玩家无效或已锁定' };
+  }
+  
+  if (sourcePlayer.accuseZone.length === 0) {
+    return { success: false, message: '源玩家质疑区没有卡牌' };
+  }
+  
+  if (params.accuseCardIndex < 0 || params.accuseCardIndex >= sourcePlayer.accuseZone.length) {
+    return { success: false, message: '卡牌索引无效' };
+  }
+  
+  // 移动质疑位置的牌
+  const movedCard = sourcePlayer.accuseZone.splice(params.accuseCardIndex, 1)[0];
+  targetPlayer.accuseZone.push(movedCard);
+  
+  return { 
+    success: true, 
+    message: `将${sourcePlayer.name}质疑区的${movedCard.name}移动到${targetPlayer.name}的质疑区`,
+    updatedPlayers: allPlayers
+  };
+}
+
+/**
+ * 新闻部/所有人将1张手牌传给左边玩家
+ */
+function executePassCardLeft(
+  allPlayers: Player[],
+  params: { cardIndex: number }
+): { success: boolean; message: string; updatedPlayers?: Player[] } {
+  // 检查所有玩家都有至少1张手牌
+  for (const player of allPlayers) {
+    if (player.hand.length === 0) {
+      return { success: false, message: `${player.name}没有手牌,无法传递` };
+    }
+  }
+  
+  // 检查卡牌索引是否有效
+  for (const player of allPlayers) {
+    if (params.cardIndex < 0 || params.cardIndex >= player.hand.length) {
+      return { success: false, message: `卡牌索引对${player.name}无效` };
+    }
+  }
+  
+  // 收集每个玩家要传递的卡牌
+  const cardsToPass: Card[] = [];
+  for (const player of allPlayers) {
+    const card = player.hand.splice(params.cardIndex, 1)[0];
+    cardsToPass.push(card);
+  }
+  
+  // 将卡牌传递给左边玩家（按玩家顺序循环）
+  for (let i = 0; i < allPlayers.length; i++) {
+    const receiverIndex = (i + 1) % allPlayers.length; // 左边玩家（顺时针顺序）
+    const card = cardsToPass[i];
+    allPlayers[receiverIndex].hand.push(card);
+  }
+  
+  return { 
+    success: true, 
+    message: '所有人将1张手牌传给了左边玩家',
+    updatedPlayers: allPlayers
+  };
 }

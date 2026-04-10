@@ -1,6 +1,7 @@
 import type { Card, Player, GameState } from '../types/game';
 import { GamePhase, ActionType, Faction, HARMONY_TARGETS } from '../types/game';
 import { getCardsForPlayerCount, createCardInstance } from '../data/cards';
+import { executeSkill } from './skills';
 
 /**
  * 初始化游戏
@@ -30,6 +31,7 @@ export function initializeGame(playerCount: number, aiCount: number): GameState 
       hand: [],
       identityCard: null,
       accuseZone: [],
+      usedCards: [],
       isLocked: false,
       isAI: isAI,
       isAlive: true,
@@ -128,13 +130,33 @@ function executeSkillAction(
   
   // 将卡牌正面打出,放在自己面前
   // 注意:这里简化处理,实际应该显示在UI上
-  currentPlayer.hand.splice(cardIndex, 1);
+  const usedCard = currentPlayer.hand.splice(cardIndex, 1)[0];
+  currentPlayer.usedCards.push(usedCard);
   
-  // TODO: 技能效果需要通过UI交互获取参数
-  // 这里返回需要参数的信息
+  // 执行技能效果
+  const result = executeSkill(
+    card,
+    currentPlayer,
+    state.players,
+    state.deck,
+    state.harmonyZone,
+    params
+  );
+  
+  // 更新状态
+  if (result.updatedPlayers) {
+    state.players = result.updatedPlayers;
+  }
+  if (result.updatedDeck) {
+    state.deck = result.updatedDeck;
+  }
+  if (result.updatedHarmonyZone) {
+    state.harmonyZone = result.updatedHarmonyZone;
+  }
+  
   return { 
-    success: true, 
-    message: `发动了${card.name}的技能: ${card.skill}` 
+    success: result.success, 
+    message: result.success ? `发动了${card.name}的技能: ${result.message}` : `发动技能失败: ${result.message}`
   };
 }
 
@@ -174,6 +196,11 @@ function executeAccuseAction(
   const targetPlayer = state.players.find(p => p.id === params.targetPlayerId);
   if (!targetPlayer) {
     return { success: false, message: '目标玩家不存在' };
+  }
+  
+  // 不能质疑自己
+  if (targetPlayer.id === currentPlayer.id) {
+    return { success: false, message: '不能质疑自己' };
   }
   
   const card = currentPlayer.hand.splice(cardIndex, 1)[0];

@@ -3,155 +3,135 @@ import { SkillType, Faction } from '../types/game';
 
 // 完整卡牌数据库
 export const ALL_CARDS: Omit<Card, 'id'>[] = [
-  // 学生会长 (1张)
+  // 外星人 (1张) - 优先级1
   {
-    name: '学生会长',
-    strength: 2,
-    skill: '作为起始玩家,可查看任意1名玩家的1张手牌',
-    skillType: SkillType.VIEW_ONE_CARD,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 1
-  },
-  // 风纪委员 (2张)
-  {
-    name: '风纪委员',
-    strength: 3,
-    skill: '查看任意1名玩家的所有手牌',
-    skillType: SkillType.VIEW_ALL_CARDS,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 图书委员 (3张)
-  {
-    name: '图书委员',
-    strength: 1,
-    skill: '从任意1名玩家手中抽1张牌,然后给其1张牌',
-    skillType: SkillType.SWAP_ONE_CARD,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 3
-  },
-  // 班长 (2张)
-  {
-    name: '班长',
-    strength: 2,
-    skill: '交换任意两名玩家的所有手牌',
-    skillType: SkillType.SWAP_ALL_CARDS,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 保健委员 (2张)
-  {
-    name: '保健委员',
-    strength: 1,
-    skill: '选择1名玩家,其本回合不能发动技能',
-    skillType: SkillType.BLOCK_SKILL,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 文艺委员 (2张)
-  {
-    name: '文艺委员',
-    strength: 0,
-    skill: '查看调和区最上方1张卡牌(背面)',
-    skillType: SkillType.VIEW_HARMONY,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 体育委员 (2张)
-  {
-    name: '体育委员',
-    strength: 3,
-    skill: '指定1名玩家,其必须将1张手牌作为调和牌打出',
-    skillType: SkillType.FORCE_HARMONIZE,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 新闻部 (2张)
-  {
-    name: '新闻部',
-    strength: 1,
-    skill: '查看任意1名玩家的最终身份牌(不可公开)',
-    skillType: SkillType.VIEW_IDENTITY,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 优等生 (2张)
-  {
-    name: '优等生',
-    strength: 2,
-    skill: '将自己的1张手牌与牌库顶牌交换',
-    skillType: SkillType.SWAP_WITH_DECK,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 2
-  },
-  // 普通学生 (3张)
-  {
-    name: '普通学生',
-    strength: 0,
-    skill: '无特殊技能',
-    skillType: SkillType.NONE,
-    winCondition: '调和成功且犯人被监禁',
-    faction: Faction.STUDENT,
-    count: 3
-  },
-  // 犯人 (1张)
-  {
-    name: '犯人',
-    strength: 2,
-    skill: '无特殊技能',
-    skillType: SkillType.NONE,
-    winCondition: '犯人未被监禁',
-    faction: Faction.CRIMINAL,
-    count: 1
-  },
-  // 共犯 (1张)
-  {
-    name: '共犯',
-    strength: 1,
-    skill: '可将1张手牌交给任意1名玩家',
-    skillType: SkillType.GIVE_CARD,
-    winCondition: '犯人未被监禁',
-    faction: Faction.ACCOMPLICE,
-    count: 1
-  },
-  // 宇宙人 (1张)
-  {
-    name: '宇宙人',
-    strength: 2,
-    skill: '可声称自己是犯人(诱导被监禁)',
+    name: '外星人',
+    strength: -1,
+    skill: '持有期间，可装作犯人',
     skillType: SkillType.NONE,
     winCondition: '被监禁即可获胜',
     faction: Faction.ALIEN,
     count: 1
   },
-  // 感染者 (1张)
+  // 感染者 (1张) - 优先级2
   {
     name: '感染者',
-    strength: 1,
-    skill: '可将1张手牌背面朝上放在调和区(降低调和值)',
+    strength: 0,
+    skill: '下回合可夺走 1 张调和位置的牌',
     skillType: SkillType.INFECT_HARMONIZE,
     winCondition: '调和失败即可获胜',
     faction: Faction.INFECTED,
     count: 1
   },
-  // 归宅部 (1张)
+  // 犯人 (1张) - 优先级3
+  {
+    name: '犯人',
+    strength: 0,
+    skill: '不能使用',
+    skillType: SkillType.NONE,
+    winCondition: '不被监禁',
+    faction: Faction.CRIMINAL,
+    count: 1
+  },
+  // 共犯 (1张) - 优先级3
+  {
+    name: '共犯',
+    strength: 0,
+    skill: '移动 1 张质疑位置的牌',
+    skillType: SkillType.MOVE_ACCUSE_CARD,
+    winCondition: '犯人未被监禁',
+    faction: Faction.ACCOMPLICE,
+    count: 1
+  },
+  // 学生会长 (1张) - 优先级4
+  {
+    name: '学生会长',
+    strength: 3,
+    skill: '作为起始玩家',
+    skillType: SkillType.NONE,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 1
+  },
+  // 班长 (2张) - 优先级4
+  {
+    name: '班长',
+    strength: 2,
+    skill: '和 1 名玩家互换 1 张手牌',
+    skillType: SkillType.SWAP_ONE_CARD,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 2
+  },
+  // 优等生 (2张) - 优先级4
+  {
+    name: '优等生',
+    strength: 2,
+    skill: '可以知道犯人在哪',
+    skillType: SkillType.VIEW_IDENTITY,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 2
+  },
+  // 风纪委员 (2张) - 优先级4
+  {
+    name: '风纪委员',
+    strength: 1,
+    skill: '可以查看某人的全部手牌',
+    skillType: SkillType.VIEW_ALL_CARDS,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 2
+  },
+  // 保健委员 (2张) - 优先级4
+  {
+    name: '保健委员',
+    strength: 1,
+    skill: '可以夺走 1 张已使用的牌',
+    skillType: SkillType.TAKE_USED_CARD,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 2
+  },
+  // 图书委员 (3张) - 优先级4
+  {
+    name: '图书委员',
+    strength: 1,
+    skill: '可以查看调和位置的牌',
+    skillType: SkillType.VIEW_HARMONY,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 3
+  },
+  // 大小姐 (3张) - 优先级4
+  {
+    name: '大小姐',
+    strength: 1,
+    skill: '夺走他人 1 张手牌并返还 1 张',
+    skillType: SkillType.SWAP_ONE_CARD,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 3
+  },
+  // 新闻部 (3张) - 优先级4
+  {
+    name: '新闻部',
+    strength: 1,
+    skill: '所有人将 1 张手牌传给左边玩家',
+    skillType: SkillType.PASS_CARD_LEFT,
+    winCondition: '调和成功',
+    faction: Faction.STUDENT,
+    count: 3
+  },
+  // 归宅部 (3张) - 优先级5
   {
     name: '归宅部',
     strength: 0,
-    skill: '可将任意1张手牌放入调和区或质疑区',
+    skill: '1 张手牌交换 1 张调和位置的牌',
     skillType: SkillType.FLEXIBLE_PLACE,
-    winCondition: '自己未被监禁且调和失败',
+    winCondition: '无任何人胜利',
     faction: Faction.GO_HOME,
-    count: 1
+    count: 3
   }
 ];
 
@@ -161,6 +141,8 @@ const CARDS_TO_REMOVE_3_PLAYERS = [
   '优等生',
   '风纪委员',
   '图书委员',
+  '大小姐',
+  '新闻部',
   '归宅部'
 ];
 
@@ -176,7 +158,7 @@ export function getCardsForPlayerCount(playerCount: number): Omit<Card, 'id'>[] 
   let cards = [...ALL_CARDS];
 
   if (playerCount === 3) {
-    // 3人局:去掉共犯、优等生、风纪委员、图书委员、归宅部各1张
+    // 3人局:去掉共犯、优等生、风纪委员、图书委员、大小姐、新闻部、归宅部各1张
     cards = cards.filter(card => {
       if (CARDS_TO_REMOVE_3_PLAYERS.includes(card.name)) {
         // 只移除1张
@@ -186,10 +168,11 @@ export function getCardsForPlayerCount(playerCount: number): Omit<Card, 'id'>[] 
       return true;
     });
   } else if (playerCount === 4 || playerCount === 6) {
-    // 4/6人局:去掉1张图书委员会
-    const removed = false;
+    // 4/6人局:去掉1张图书委员
+    let removed = false;
     cards = cards.filter(card => {
       if (card.name === '图书委员' && !removed) {
+        removed = true;
         return false;
       }
       return true;

@@ -23,6 +23,12 @@
         <span class="summary-label">质疑</span>
         <span class="click-hint">点击查看详情</span>
       </div>
+      <div class="summary-item" @click="showDetail('used')" v-if="player.usedCards.length > 0">
+        <span class="summary-icon">📄</span>
+        <span class="summary-value">{{ player.usedCards.length }}</span>
+        <span class="summary-label">已使用</span>
+        <span class="click-hint">点击查看详情</span>
+      </div>
     </div>
     
     <!-- 身份牌(游戏结束后显示) -->
@@ -71,6 +77,21 @@
               />
             </div>
           </div>
+          
+          <!-- 已使用卡牌详情 -->
+          <div v-if="detailType === 'used'" class="detail-cards">
+            <div v-if="player.usedCards.length === 0" class="empty-detail">
+              无已使用卡牌
+            </div>
+            <div v-else class="cards-grid">
+              <Card
+                v-for="card in player.usedCards"
+                :key="card.id"
+                :card="card"
+                :face-up="true"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -98,18 +119,20 @@ const emit = defineEmits<{
 
 // 详情弹窗状态
 const showDetailModal = ref(false);
-const detailType = ref<'hand' | 'accuse' | ''>('');
+const detailType = ref<'hand' | 'accuse' | 'used' | ''>('');
 
 const modalTitle = computed(() => {
   if (detailType.value === 'hand') {
     return `${props.player.name} 的手牌 (${props.player.hand.length} 张)`;
   } else if (detailType.value === 'accuse') {
     return `${props.player.name} 的质疑区 (${props.player.accuseZone.length} 张)`;
+  } else if (detailType.value === 'used') {
+    return `${props.player.name} 的已使用卡牌 (${props.player.usedCards.length} 张)`;
   }
   return '';
 });
 
-function showDetail(type: 'hand' | 'accuse') {
+function showDetail(type: 'hand' | 'accuse' | 'used') {
   detailType.value = type;
   showDetailModal.value = true;
 }

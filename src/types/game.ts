@@ -45,7 +45,10 @@ export const SkillType = {
   SWAP_WITH_DECK: 'swap_with_deck', // 与牌库交换
   GIVE_CARD: 'give_card', // 给予卡牌
   INFECT_HARMONIZE: 'infect_harmonize', // 感染者调和
-  FLEXIBLE_PLACE: 'flexible_place' // 灵活放置
+  FLEXIBLE_PLACE: 'flexible_place', // 灵活放置
+  TAKE_USED_CARD: 'take_used_card', // 夺走已使用的牌
+  MOVE_ACCUSE_CARD: 'move_accuse_card', // 移动质疑位置的牌
+  PASS_CARD_LEFT: 'pass_card_left' // 所有人将1张手牌传给左边玩家
 } as const;
 
 export type SkillType = typeof SkillType[keyof typeof SkillType];
@@ -69,6 +72,7 @@ export interface Player {
   hand: Card[]; // 手牌
   identityCard: Card | null; // 身份牌(锁定后确定)
   accuseZone: Card[]; // 质疑区卡牌
+  usedCards: Card[]; // 已使用的卡牌（发动特技后放在玩家身前）
   isLocked: boolean; // 是否已锁定身份
   isAI: boolean; // 是否是AI
   isAlive: boolean; // 是否还在游戏中(锁定后为false)

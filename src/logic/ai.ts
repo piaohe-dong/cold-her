@@ -152,7 +152,10 @@ function makeSkillDecision(player: Player, state: GameState): AIDecision | null 
   // 简化处理:对于需要复杂参数的技能,降级为调和
   if (card.skillType === 'swap_all_cards' || 
       card.skillType === 'swap_with_deck' ||
-      card.skillType === 'flexible_place') {
+      card.skillType === 'flexible_place' ||
+      card.skillType === 'take_used_card' ||
+      card.skillType === 'move_accuse_card' ||
+      card.skillType === 'pass_card_left') {
     return makeHarmonizeDecision(player, state);
   }
   

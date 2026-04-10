@@ -24,7 +24,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # 复制构建产物到nginx目录
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 暴露5173端口
-EXPOSE 5173
+# 暴露 80 端口（nginx 监听端口）
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

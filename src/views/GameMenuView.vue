@@ -7,46 +7,47 @@
       <div class="settings-card">
         <h2 class="settings-title">游戏设置</h2>
         
-        <!-- 玩家人数选择 -->
-        <div class="setting-item">
-          <div class="setting-label">玩家人数</div>
-          <div class="player-count-options">
-            <el-radio-group v-model="playerCount" size="large">
-              <el-radio-button :label="3">3人场</el-radio-button>
-              <el-radio-button :label="4">4人场</el-radio-button>
-              <el-radio-button :label="5">5人场</el-radio-button>
-              <el-radio-button :label="6">6人场</el-radio-button>
-            </el-radio-group>
-          </div>
-          <div class="setting-description">
-            根据人数自动调整卡牌数量和目标值
-          </div>
-        </div>
-        
-        <!-- 变体规则开关 -->
-        <div class="setting-item">
-          <div class="setting-label">变体规则</div>
-          <div class="chaos-mode-option">
-            <el-switch
-              v-model="enableChaosMode"
-              active-text="混沌模式"
-              inactive-text="标准模式"
-              size="large"
-            />
-          </div>
-          <div class="setting-description">
-            混沌模式下，最后一张手牌可通过卡牌能力转移（基础规则中最后一张手牌被保护）
+        <!-- 玩家数量卡牌选择 -->
+        <div class="player-cards-grid">
+          <div 
+            v-for="count in [3, 4, 5, 6]" 
+            :key="count"
+            class="player-card"
+            :class="{ 'selected': playerCount === count }"
+            @click="playerCount = count as 3 | 4 | 5 | 6"
+          >
+            <div class="card-header">
+              <div class="player-count">{{ count }}人</div>
+              <div class="card-label">玩家数量</div>
+            </div>
+            <div class="card-content">
+              <div class="target-info">
+                <div class="target-label">调和目标值</div>
+                <div class="target-value">{{ getTargetValue(count) }}</div>
+              </div>
+              <div class="card-description">
+                适合{{ count }}名玩家的游戏规模
+              </div>
+            </div>
+            <div class="card-indicator" v-if="playerCount === count">
+              <span class="indicator-icon">✓</span>
+            </div>
           </div>
         </div>
         
-        <!-- 目标值显示 -->
-        <div class="setting-item">
-          <div class="setting-label">目标值</div>
-          <div class="target-value">
-            <span class="value">{{ targetValue }}</span>
+        <!-- 当前设置汇总 -->
+        <div class="current-setting-summary">
+          <div class="summary-item">
+            <span class="summary-label">已选择：</span>
+            <span class="summary-value">{{ playerCount }}人场</span>
           </div>
-          <div class="setting-description">
-            调和成功需要达到的MP合计值
+          <div class="summary-item">
+            <span class="summary-label">目标值：</span>
+            <span class="summary-value">{{ targetValue }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">模式：</span>
+            <span class="summary-value">标准模式</span>
           </div>
         </div>
         
@@ -59,13 +60,6 @@
             class="start-button"
           >
             开始游戏
-          </el-button>
-          <el-button
-            size="large"
-            @click="goToHome"
-            class="back-button"
-          >
-            返回首页
           </el-button>
         </div>
       </div>
@@ -89,7 +83,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/gameStore'
-import { ElRadioGroup, ElRadioButton, ElSwitch, ElButton } from 'element-plus'
+import { ElButton } from 'element-plus'
 
 const router = useRouter()
 const gameStore = useGameStore()
@@ -97,36 +91,31 @@ const gameStore = useGameStore()
 // 玩家人数选择
 const playerCount = ref<3 | 4 | 5 | 6>(4)
 
-// 混沌模式开关
-const enableChaosMode = ref(false)
-
-// 计算目标值
-const targetValue = computed(() => {
-  switch (playerCount.value) {
+// 计算目标值的函数
+const getTargetValue = (count: number): number => {
+  switch (count) {
     case 3: return 9
     case 4: return 8
     case 5: return 7
     case 6: return 6
     default: return 8
   }
-})
+}
+
+// 当前选择的目标值（计算属性）
+const targetValue = computed(() => getTargetValue(playerCount.value))
 
 // 开始游戏
 const startGame = () => {
-  // 保存设置到store
+  // 保存设置到store（默认使用标准模式）
   gameStore.settings.playerCount = playerCount.value
-  gameStore.settings.enableChaosMode = enableChaosMode.value
+  gameStore.settings.enableChaosMode = false
   
-  // 初始化游戏
-  gameStore.startGame(playerCount.value, enableChaosMode.value)
+  // 初始化游戏（标准模式）
+  gameStore.startGame(playerCount.value, false)
   
   // 跳转到游戏页面
   router.push('/game')
-}
-
-// 返回首页
-const goToHome = () => {
-  router.push('/')
 }
 </script>
 
@@ -145,6 +134,7 @@ const goToHome = () => {
 
 .menu-container {
   width: 100%;
+  min-width: 90vw;
   max-width: 650px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(15px);
@@ -218,96 +208,184 @@ const goToHome = () => {
   z-index: 1;
 }
 
-.setting-item {
-  margin-bottom: 35px;
-  padding: 20px;
+/* 玩家卡牌网格 */
+.player-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+/* 玩家卡牌 */
+.player-card {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.setting-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-}
-
-.setting-label {
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 14px;
-  font-size: 1.2rem;
-  letter-spacing: 0.3px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.setting-label::before {
-  content: '⚙️';
-  font-size: 1rem;
-}
-
-.setting-description {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.95rem;
-  margin-top: 10px;
-  line-height: 1.5;
-  font-weight: 300;
-  padding-left: 26px;
-}
-
-.player-count-options {
-  margin-top: 10px;
-}
-
-.chaos-mode-option {
-  margin-top: 10px;
-}
-
-.target-value {
-  margin-top: 10px;
-}
-
-.target-value .value {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: #2ecc71;
-  text-shadow: 0 4px 12px rgba(46, 204, 113, 0.5);
-  background: rgba(0, 0, 0, 0.3);
-  padding: 10px 25px;
-  border-radius: 16px;
-  display: inline-block;
-  border: 2px solid rgba(46, 204, 113, 0.5);
-  backdrop-filter: blur(8px);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 25px;
-  margin-top: 50px;
-}
-
-.start-button {
-  flex: 2;
-  height: 70px;
-  font-size: 1.3rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #2ecc71, #27ae60);
-  border: none;
-  border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(46, 204, 113, 0.5);
+  padding: 24px;
+  cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(8px);
   position: relative;
   overflow: hidden;
 }
 
+.player-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.player-card.selected {
+  background: rgba(46, 204, 113, 0.15);
+  border: 2px solid rgba(46, 204, 113, 0.7);
+  box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+}
+
+/* 卡牌头部 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.player-count {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.card-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* 卡牌内容 */
+.card-content {
+  padding-top: 10px;
+}
+
+.target-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.target-label {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.target-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #2ecc71;
+  text-shadow: 0 3px 8px rgba(46, 204, 113, 0.5);
+}
+
+.card-description {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+  font-weight: 300;
+}
+
+/* 选中指示器 */
+.card-indicator {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 24px;
+  height: 24px;
+  background: #2ecc71;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.5);
+}
+
+.indicator-icon {
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* 当前设置汇总 */
+.current-setting-summary {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 30px 0;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.summary-value:last-child {
+  color: #2ecc71;
+}
+
+
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.start-button {
+  width: 280px;
+  height: 60px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .start-button:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(46, 204, 113, 0.7);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(46, 204, 113, 0.7);
   background: linear-gradient(135deg, #27ae60, #219653);
 }
 
@@ -319,49 +397,32 @@ const goToHome = () => {
   right: 0;
   height: 40%;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
-  border-radius: 16px 16px 0 0;
+  border-radius: 20px 20px 0 0;
 }
 
-.back-button {
-  flex: 1;
-  height: 70px;
-  font-size: 1.3rem;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-radius: 16px;
-  color: white;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(8px);
-}
 
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
-}
 
 .rules-summary {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border-radius: 18px;
-  padding: 30px;
+  border-radius: 20px;
+  padding: 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-top: 5px solid #9b59b6;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
-  margin-top: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  margin-top: 24px;
   transition: transform 0.3s ease;
 }
 
 .rules-summary:hover {
   transform: translateY(-4px);
-  box-shadow: 0 15px 45px rgba(155, 89, 182, 0.4);
+  box-shadow: 0 12px 35px rgba(155, 89, 182, 0.4);
 }
 
 .rules-summary h3 {
   color: #ffffff;
-  margin-bottom: 20px;
-  font-size: 1.6rem;
+  margin-bottom: 16px;
+  font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   display: flex;
@@ -381,18 +442,18 @@ const goToHome = () => {
 
 .rules-summary li {
   color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 14px;
-  padding-left: 36px;
+  margin-bottom: 12px;
+  padding-left: 32px;
   position: relative;
-  line-height: 1.6;
-  font-size: 1.05rem;
+  line-height: 1.5;
+  font-size: 1rem;
   font-weight: 300;
 }
 
 .rules-summary li:before {
   content: '✦';
   color: #9b59b6;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   position: absolute;
   left: 0;
   top: 0;
@@ -411,9 +472,116 @@ const goToHome = () => {
   }
 }
 
+/* 中等屏幕优化 */
+@media (min-width: 1024px) {
+  .menu-container {
+    min-width: 70vw;
+    max-width: 900px;
+  }
+  
+  .title {
+    font-size: 3.2rem;
+  }
+  
+  .title::after {
+    width: 140px;
+  }
+  
+  .settings-title {
+    font-size: 2rem;
+  }
+  
+  .action-buttons {
+    gap: 28px;
+  }
+}
+
+/* PC布局优化 */
+@media (min-width: 1200px) {
+  .menu-container {
+    min-width: 80vw;
+    max-width: 1200px;
+    padding: 60px;
+  }
+  
+  .title {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+  }
+  
+  .title::after {
+    width: 160px;
+    height: 5px;
+  }
+  
+  .subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 60px;
+  }
+  
+  .settings-title {
+    font-size: 2.2rem;
+    margin-bottom: 45px;
+    padding-bottom: 22px;
+  }
+  
+  .setting-item {
+    padding: 25px;
+    margin-bottom: 45px;
+  }
+  
+  .setting-label {
+    font-size: 1.3rem;
+    margin-bottom: 18px;
+  }
+  
+  .setting-description {
+    font-size: 1.05rem;
+    margin-top: 12px;
+  }
+  
+  .target-value .value {
+    font-size: 3rem;
+    padding: 12px 30px;
+  }
+  
+  .action-buttons {
+    gap: 30px;
+    margin-top: 60px;
+  }
+  
+  .start-button,
+  .back-button {
+    height: 80px;
+    font-size: 1.5rem;
+  }
+  
+  .rules-summary {
+    padding: 40px;
+    border-top-width: 6px;
+  }
+  
+  .rules-summary h3 {
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+  }
+  
+  .rules-summary li {
+    font-size: 1.15rem;
+    margin-bottom: 18px;
+    padding-left: 40px;
+  }
+  
+  .rules-summary li:before {
+    font-size: 1.3rem;
+  }
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .menu-container {
+    min-width: 95vw;
+    max-width: none;
     padding: 25px;
     margin: 10px;
   }
@@ -434,6 +602,8 @@ const goToHome = () => {
 
 @media (max-width: 480px) {
   .menu-container {
+    min-width: 95vw;
+    max-width: none;
     padding: 20px;
     margin: 5px;
   }

@@ -258,39 +258,122 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0c2461 0%, #1e3799 50%, #4a69bd 100%);
   padding: 20px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .result-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px;
   background-color: white;
   border-radius: 16px;
   padding: 40px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+/* PC 端布局优化 */
+@media (min-width: 1025px) {
+  .result-container {
+    width: 80vw;
+    min-width: 1000px;
+    max-width: 1400px;
+  }
+  
+  .main-results {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .player-roles-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .play-history-list {
+    max-height: 500px;
+  }
+  
+  .title {
+    font-size: 3rem;
+    margin-bottom: 50px;
+  }
+  
+  .result-card {
+    padding: 30px;
+  }
+  
+  .result-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .harmony-status {
+    font-size: 2rem;
+    padding: 25px;
+  }
+  
+  .action-buttons {
+    gap: 30px;
+  }
+  
+  .play-again-button, .menu-button {
+    min-width: 250px;
+    height: 70px;
+    font-size: 1.3rem;
+  }
+}
+
 .title {
   text-align: center;
-  color: #2c3e50;
+  color: #ffffff;
   margin-bottom: 40px;
   font-size: 2.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
 }
 
 /* 主要结果区域 */
 .main-results {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: 24px;
+  margin-bottom: 30px;
 }
 
 .result-card {
   background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 25px;
+  border-radius: 16px;
+  padding: 20px;
   border-top: 4px solid;
+  animation: cardSlideIn 0.6s ease-out;
+  transition: all 0.3s ease;
+}
+
+.result-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .harmony-result {
@@ -403,22 +486,22 @@ onMounted(() => {
 /* 玩家身份列表 */
 .player-roles-card {
   background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 40px;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 30px;
   border-top: 4px solid #f39c12;
 }
 
 .player-roles-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
 .player-role-item {
   background-color: white;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 16px;
   border: 2px solid #dee2e6;
   transition: all 0.3s;
 }
@@ -475,24 +558,24 @@ onMounted(() => {
 /* 出牌记录 */
 .play-history-card {
   background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 40px;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 30px;
   border-top: 4px solid #9b59b6;
 }
 
 .play-history-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   max-height: 400px;
   overflow-y: auto;
 }
 
 .play-record {
   background-color: white;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 16px;
   border-left: 4px solid #9b59b6;
 }
 
@@ -548,13 +631,34 @@ onMounted(() => {
 
 .play-again-button, .menu-button {
   min-width: 200px;
-  height: 60px;
-  font-size: 1.2rem;
+  height: 56px;
+  font-size: 1.1rem;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-/* 移动端适配 */
+.play-again-button:hover, .menu-button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 平板设备适配 */
 @media (max-width: 1024px) {
   .main-results {
+    grid-template-columns: 1fr;
+  }
+  
+  .player-roles-list {
     grid-template-columns: 1fr;
   }
   
@@ -565,12 +669,19 @@ onMounted(() => {
   .play-again-button, .menu-button {
     width: 100%;
   }
+  
+  .result-container {
+    width: 95vw;
+    min-width: 0;
+  }
 }
 
+/* 小平板和大屏手机适配 */
 @media (max-width: 768px) {
   .result-container {
     padding: 25px;
     margin: 10px;
+    width: 98vw;
   }
   
   .title {
@@ -585,6 +696,63 @@ onMounted(() => {
   
   .player-name {
     font-size: 1.1rem;
+  }
+  
+  .result-card {
+    padding: 20px;
+  }
+  
+  .result-header h2 {
+    font-size: 1.4rem;
+  }
+  
+  .harmony-status {
+    font-size: 1.6rem;
+  }
+}
+
+/* 手机设备适配 */
+@media (max-width: 480px) {
+  .result-container {
+    padding: 20px;
+    margin: 5px;
+    width: 100vw;
+  }
+  
+  .title {
+    font-size: 1.8rem;
+    margin-bottom: 30px;
+  }
+  
+  .result-card {
+    padding: 15px;
+  }
+  
+  .result-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .harmony-status {
+    font-size: 1.4rem;
+    padding: 15px;
+  }
+  
+  .play-again-button, .menu-button {
+    min-width: 100%;
+    height: 50px;
+    font-size: 1rem;
+  }
+  
+  .play-history-list {
+    max-height: 300px;
+  }
+  
+  .play-record {
+    padding: 15px;
+  }
+  
+  .player-role-item {
+    padding: 15px;
   }
 }
 </style>

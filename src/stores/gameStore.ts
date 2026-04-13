@@ -836,7 +836,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 执行班长效果：和1名玩家互换1张手牌
-  const executeMonitorEffect = (playerIndex: number) => {
+  const executeMonitorEffect = (playerIndex: number, targetPlayerId?: string) => {
     const player = players.value[playerIndex]
     if (!player) return
     
@@ -850,8 +850,19 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    // 随机选择一个目标玩家
-    const targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]!
+    // 选择目标玩家
+    let targetPlayer
+    if (targetPlayerId) {
+      // 使用用户选择的目标玩家
+      targetPlayer = players.value.find(p => p.id === targetPlayerId)
+      if (!targetPlayer || targetPlayer.isExited || targetPlayer.handCards.length === 0) {
+        addLog('错误：选择的目标玩家无效')
+        return
+      }
+    } else {
+      // 随机选择一个目标玩家（AI使用）
+      targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]!
+    }
     
     // 随机选择一张自己的手牌和目标玩家的手牌
     if (player.handCards.length === 0 || targetPlayer.handCards.length === 0) {
@@ -883,7 +894,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 执行风纪委员效果：查看某人的全部手牌
-  const executeDisciplineEffect = (playerIndex: number) => {
+  const executeDisciplineEffect = (playerIndex: number, targetPlayerId?: string) => {
     const player = players.value[playerIndex]
     if (!player) return
     
@@ -897,8 +908,19 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    // 随机选择一个目标玩家
-    const targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]!
+    // 选择目标玩家
+    let targetPlayer
+    if (targetPlayerId) {
+      // 使用用户选择的目标玩家
+      targetPlayer = players.value.find(p => p.id === targetPlayerId)
+      if (!targetPlayer || targetPlayer.isExited) {
+        addLog('错误：选择的目标玩家无效')
+        return
+      }
+    } else {
+      // 随机选择一个目标玩家（AI使用）
+      targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]!
+    }
     
     // 记录目标玩家的手牌信息
     const handCardsInfo = targetPlayer.handCards.map(card => card.name).join(', ')
@@ -912,7 +934,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 执行保健委员效果：夺走1张已使用的牌
-  const executeHealthEffect = (playerIndex: number) => {
+  const executeHealthEffect = (playerIndex: number, cardIndex?: number) => {
     const player = players.value[playerIndex]
     if (!player) return
     
@@ -929,9 +951,16 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    // 随机选择一张已使用的牌
-    const randomIndex = Math.floor(Math.random() * allPlayedCards.length)
-    const selected = allPlayedCards[randomIndex]!
+    // 选择要夺走的牌
+    let selected
+    if (cardIndex !== undefined && cardIndex >= 0 && cardIndex < allPlayedCards.length) {
+      // 使用用户选择的卡牌
+      selected = allPlayedCards[cardIndex]!
+    } else {
+      // 随机选择一张已使用的牌（AI使用）
+      const randomIndex = Math.floor(Math.random() * allPlayedCards.length)
+      selected = allPlayedCards[randomIndex]!
+    }
     
     // 从原玩家的playedCards中移除
     const originalPlayer = players.value[selected.playerIndex]
@@ -954,7 +983,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 执行大小姐效果：夺走他人1张手牌并返还1张
-  const executeOjousamaEffect = (playerIndex: number) => {
+  const executeOjousamaEffect = (playerIndex: number, targetPlayerId?: string) => {
     const player = players.value[playerIndex]
     if (!player) return
     
@@ -968,8 +997,19 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    // 随机选择一个目标玩家
-    const targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]!
+    // 选择目标玩家
+    let targetPlayer
+    if (targetPlayerId) {
+      // 使用用户选择的目标玩家
+      targetPlayer = players.value.find(p => p.id === targetPlayerId)
+      if (!targetPlayer || targetPlayer.isExited || targetPlayer.handCards.length === 0) {
+        addLog('错误：选择的目标玩家无效')
+        return
+      }
+    } else {
+      // 随机选择一个目标玩家（AI使用）
+      targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]!
+    }
     
     // 随机选择一张目标玩家的手牌
     const targetCardIndex = Math.floor(Math.random() * targetPlayer.handCards.length)
@@ -999,7 +1039,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 执行归宅部效果：1张手牌交换1张调和位置的牌
-  const executeGoHomeEffect = (playerIndex: number) => {
+  const executeGoHomeEffect = (playerIndex: number, handCardIndex?: number, harmonyCardIndex?: number) => {
     const player = players.value[playerIndex]
     if (!player) return
     
@@ -1008,17 +1048,32 @@ export const useGameStore = defineStore('game', () => {
       return
     }
     
-    // 随机选择一张手牌
-    const handCardIndex = Math.floor(Math.random() * player.handCards.length)
-    const handCard = player.handCards[handCardIndex]!
+    // 选择手牌
+    let selectedHandCardIndex
+    if (handCardIndex !== undefined && handCardIndex >= 0 && handCardIndex < player.handCards.length) {
+      // 使用用户选择的手牌
+      selectedHandCardIndex = handCardIndex
+    } else {
+      // 随机选择一张手牌（AI使用）
+      selectedHandCardIndex = Math.floor(Math.random() * player.handCards.length)
+    }
     
-    // 随机选择一张调和区域的牌
-    const harmonyCardIndex = Math.floor(Math.random() * harmonyArea.value.length)
-    const harmonyCard = harmonyArea.value[harmonyCardIndex]!
+    // 选择调和区域的牌
+    let selectedHarmonyCardIndex
+    if (harmonyCardIndex !== undefined && harmonyCardIndex >= 0 && harmonyCardIndex < harmonyArea.value.length) {
+      // 使用用户选择的调和区域牌
+      selectedHarmonyCardIndex = harmonyCardIndex
+    } else {
+      // 随机选择一张调和区域的牌（AI使用）
+      selectedHarmonyCardIndex = Math.floor(Math.random() * harmonyArea.value.length)
+    }
+    
+    const handCard = player.handCards[selectedHandCardIndex]!
+    const harmonyCard = harmonyArea.value[selectedHarmonyCardIndex]!
     
     // 执行交换
-    player.handCards.splice(handCardIndex, 1)
-    harmonyArea.value.splice(harmonyCardIndex, 1)
+    player.handCards.splice(selectedHandCardIndex, 1)
+    harmonyArea.value.splice(selectedHarmonyCardIndex, 1)
     
     // 玩家获得调和区域的牌
     player.handCards.push(harmonyCard)

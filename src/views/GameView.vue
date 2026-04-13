@@ -764,12 +764,34 @@ const endGame = () => {
 // 监听pendingSkillAction变化，自动显示对话框
 watch(pendingSkillAction, (newVal) => {
   if (newVal) {
-    showSkillDialog.value = true
-    resetSkillSelections()
+    // 添加技能对话框显示动画
+    setTimeout(() => {
+      showSkillDialog.value = true
+      resetSkillSelections()
+    }, 100)
   } else {
-    showSkillDialog.value = false
+    // 添加技能对话框关闭动画
+    setTimeout(() => {
+      showSkillDialog.value = false
+    }, 300)
   }
 }, { immediate: true })
+
+// 技能执行状态
+const isSkillExecuting = ref(false)
+
+// 执行技能前的动画
+const startSkillAnimation = () => {
+  isSkillExecuting.value = true
+  // 可以在这里添加全局的技能执行动画效果
+}
+
+// 执行技能后的动画
+const endSkillAnimation = () => {
+  setTimeout(() => {
+    isSkillExecuting.value = false
+  }, 500)
+}
 
 // 重置所有选择状态
 const resetSkillSelections = () => {
@@ -817,101 +839,290 @@ const cancelSkillAction = () => {
 
 // 执行感染者技能（夺走调和区域牌）
 const executeInfectedSkill = () => {
-  const playerIndex = gameStore.currentPlayerIndex
-  gameStore.executeInfectedEffect(playerIndex)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('感染者效果生效：夺走了一张调和区域的牌')
+  try {
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    // 执行技能
+    const success = gameStore.executeInfectedEffect(playerIndex)
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('感染者效果生效：夺走了一张调和区域的牌')
+    } else {
+      showSkillEffect('错误：感染者技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行感染者技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
+  }
 }
 
 // 执行共犯技能（移动质疑牌）
 const executeAccompliceSkill = () => {
-  if (selectedDoubtCardIndex.value === null || selectedTargetPlayerId.value === null) return
-  
-  // 获取选中的质疑牌数据
-  const doubtCards = pendingSkillAction.value?.data?.doubtCards || []
-  const selectedDoubtCard = doubtCards[selectedDoubtCardIndex.value]
-  if (!selectedDoubtCard) return
-  
-  // 在doubtArea中找到对应的索引
-  const doubtArea = gameStore.doubtArea
-  const actualDoubtIndex = doubtArea.findIndex(item => 
-    item.card.id === selectedDoubtCard.card.id && item.playerId === selectedDoubtCard.playerId
-  )
-  
-  if (actualDoubtIndex === -1) {
-    // 如果找不到，使用随机选择
-    showSkillEffect('错误：找不到选中的质疑牌，使用随机选择')
+  try {
+    if (selectedDoubtCardIndex.value === null || selectedTargetPlayerId.value === null) {
+      showSkillEffect('错误：请选择质疑牌和目标玩家')
+      return
+    }
+    
+    // 获取选中的质疑牌数据
+    const doubtCards = pendingSkillAction.value?.data?.doubtCards || []
+    if (selectedDoubtCardIndex.value >= doubtCards.length) {
+      showSkillEffect('错误：选中的质疑牌不存在')
+      return
+    }
+    
+    const selectedDoubtCard = doubtCards[selectedDoubtCardIndex.value]
+    if (!selectedDoubtCard) {
+      showSkillEffect('错误：选中的质疑牌数据无效')
+      return
+    }
+    
+    // 在doubtArea中找到对应的索引
+    const doubtArea = gameStore.doubtArea
+    const actualDoubtIndex = doubtArea.findIndex(item => 
+      item.card.id === selectedDoubtCard.card.id && item.playerId === selectedDoubtCard.playerId
+    )
+    
+    if (actualDoubtIndex === -1) {
+      // 如果找不到，使用随机选择
+      showSkillEffect('警告：找不到选中的质疑牌，使用随机选择')
+    }
+    
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    // 调用store方法，传递选择的参数
+    const success = gameStore.executeAccompliceEffect(
+      playerIndex, 
+      actualDoubtIndex !== -1 ? actualDoubtIndex : undefined, 
+      selectedTargetPlayerId.value
+    )
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('共犯能力生效：移动了一张质疑牌')
+    } else {
+      showSkillEffect('错误：共犯技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行共犯技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
   }
-  
-  const playerIndex = gameStore.currentPlayerIndex
-  // 调用store方法，传递选择的参数
-  gameStore.executeAccompliceEffect(playerIndex, actualDoubtIndex !== -1 ? actualDoubtIndex : undefined, selectedTargetPlayerId.value)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('共犯能力生效：移动了一张质疑牌')
 }
 
 // 执行班长技能（互换手牌）
 const executeMonitorSkill = () => {
-  if (selectedTargetPlayerId.value === null) return
-  
-  const playerIndex = gameStore.currentPlayerIndex
-  gameStore.executeMonitorEffect(playerIndex)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('班长能力生效：与玩家互换了手牌')
+  try {
+    if (selectedTargetPlayerId.value === null) {
+      showSkillEffect('错误：请选择目标玩家')
+      return
+    }
+    
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    const success = gameStore.executeMonitorEffect(playerIndex, selectedTargetPlayerId.value)
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('班长能力生效：与玩家互换了手牌')
+    } else {
+      showSkillEffect('错误：班长技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行班长技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
+  }
 }
 
 // 执行风纪委员技能（查看手牌）
 const executeDisciplineSkill = () => {
-  if (selectedTargetPlayerId.value === null) return
-  
-  const playerIndex = gameStore.currentPlayerIndex
-  gameStore.executeDisciplineEffect(playerIndex)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('风纪委员能力生效：查看了玩家的手牌')
+  try {
+    if (selectedTargetPlayerId.value === null) {
+      showSkillEffect('错误：请选择目标玩家')
+      return
+    }
+    
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    const success = gameStore.executeDisciplineEffect(playerIndex, selectedTargetPlayerId.value)
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('风纪委员能力生效：查看了玩家的手牌')
+    } else {
+      showSkillEffect('错误：风纪委员技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行风纪委员技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
+  }
 }
 
 // 执行保健委员技能（夺走已使用的牌）
 const executeHealthSkill = () => {
-  if (selectedHealthCardIndex.value === null) return
-  
-  const playerIndex = gameStore.currentPlayerIndex
-  gameStore.executeHealthEffect(playerIndex)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('保健委员能力生效：夺走了一张已使用的牌')
+  try {
+    if (selectedHealthCardIndex.value === null) {
+      showSkillEffect('错误：请选择要夺走的牌')
+      return
+    }
+    
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    const success = gameStore.executeHealthEffect(playerIndex, selectedHealthCardIndex.value)
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('保健委员能力生效：夺走了一张已使用的牌')
+    } else {
+      showSkillEffect('错误：保健委员技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行保健委员技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
+  }
 }
 
 // 执行大小姐技能（交换手牌）
 const executeOjousamaSkill = () => {
-  if (selectedTargetPlayerId.value === null) return
-  
-  const playerIndex = gameStore.currentPlayerIndex
-  gameStore.executeOjousamaEffect(playerIndex)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('大小姐能力生效：夺走并返还了一张手牌')
+  try {
+    if (selectedTargetPlayerId.value === null) {
+      showSkillEffect('错误：请选择目标玩家')
+      return
+    }
+    
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    const success = gameStore.executeOjousamaEffect(playerIndex, selectedTargetPlayerId.value)
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('大小姐能力生效：夺走并返还了一张手牌')
+    } else {
+      showSkillEffect('错误：大小姐技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行大小姐技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
+  }
 }
 
 // 执行归宅部技能（交换手牌和调和区域牌）
 const executeGoHomeSkill = () => {
-  if (selectedGoHomeHandCardIndex.value === null || selectedGoHomeHarmonyCardIndex.value === null) return
-  
-  const playerIndex = gameStore.currentPlayerIndex
-  gameStore.executeGoHomeEffect(playerIndex)
-  gameStore.pendingSkillAction = null
-  showSkillDialog.value = false
-  resetSkillSelections()
-  showSkillEffect('归宅部能力生效：用手牌交换了一张调和区域的牌')
+  try {
+    if (selectedGoHomeHandCardIndex.value === null || selectedGoHomeHarmonyCardIndex.value === null) {
+      showSkillEffect('错误：请选择手牌和调和区域牌')
+      return
+    }
+    
+    const playerIndex = gameStore.currentPlayerIndex
+    if (playerIndex === -1) {
+      showSkillEffect('错误：无法获取当前玩家索引')
+      return
+    }
+    
+    // 开始技能动画
+    startSkillAnimation()
+    
+    const success = gameStore.executeGoHomeEffect(
+      playerIndex, 
+      selectedGoHomeHandCardIndex.value, 
+      selectedGoHomeHarmonyCardIndex.value
+    )
+    
+    // 结束技能动画
+    endSkillAnimation()
+    
+    if (success) {
+      gameStore.pendingSkillAction = null
+      showSkillDialog.value = false
+      resetSkillSelections()
+      showSkillEffect('归宅部能力生效：用手牌交换了一张调和区域的牌')
+    } else {
+      showSkillEffect('错误：归宅部技能执行失败')
+    }
+  } catch (error) {
+    console.error('执行归宅部技能失败:', error)
+    endSkillAnimation()
+    showSkillEffect('错误：技能执行失败，请重试')
+  }
 }
 
 // 组件挂载时检查游戏状态
@@ -933,6 +1144,60 @@ onMounted(() => {
   color: #f8f9fa;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   animation: fadeIn 0.8s ease-out;
+}
+
+/* PC 端布局优化 */
+@media (min-width: 1025px) {
+  .game-view {
+    max-width: 1920px;
+    margin: 0 auto;
+    width: 95vw;
+    min-width: 1200px;
+  }
+  
+  .upper-section {
+    min-height: 400px;
+  }
+  
+  .harmony-area {
+    flex: 1;
+  }
+  
+  .ai-players-area {
+    flex: 2.5;
+  }
+  
+  .info-area {
+    flex: 1.8;
+  }
+  
+  .hand-cards {
+    justify-content: center;
+  }
+  
+  .hand-card {
+    width: 200px;
+  }
+  
+  .ai-players-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .info-content {
+    height: 400px;
+  }
+  
+  .game-info-bar {
+    padding: 20px 30px;
+  }
+  
+  .area-header {
+    padding-bottom: 20px;
+  }
+  
+  .area-header h3 {
+    font-size: 1.6em;
+  }
 }
 
 :deep(.el-button) {
@@ -994,8 +1259,8 @@ onMounted(() => {
 /* 上部分布局 */
 .upper-section {
   display: flex;
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: 20px;
+  margin-bottom: 20px;
   flex: 1;
   min-height: 320px;
 }
@@ -1003,9 +1268,9 @@ onMounted(() => {
 .harmony-area, .ai-players-area, .info-area {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -1135,88 +1400,122 @@ onMounted(() => {
 /* AI玩家区域 */
 .ai-players-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 
 .ai-player-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-  border-radius: 14px;
-  padding: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 22px;
   border: 2px solid rgba(155, 89, 182, 0.4);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-player-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+  border-radius: 16px 16px 0 0;
 }
 
 .ai-player-card:hover {
-  transform: translateY(-6px) scale(1.02);
+  transform: translateY(-8px) scale(1.03);
   border-color: rgba(155, 89, 182, 0.8);
-  box-shadow: 0 12px 30px rgba(155, 89, 182, 0.4);
+  box-shadow: 0 15px 35px rgba(155, 89, 182, 0.5);
 }
 
 .ai-player-card.current-turn {
   border-color: #f1c40f;
-  background: rgba(241, 196, 15, 0.2);
-  box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.3), 0 8px 25px rgba(241, 196, 15, 0.4);
-  animation: pulse-turn 2s infinite;
+  background: linear-gradient(145deg, rgba(241, 196, 15, 0.2), rgba(241, 196, 15, 0.1));
+  box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.4), 0 12px 35px rgba(241, 196, 15, 0.5);
+  animation: pulse-turn 2s infinite, card-glow 3s ease-in-out infinite;
 }
 
 .ai-player-card.exited {
   opacity: 0.6;
   border-color: rgba(149, 165, 166, 0.4);
-  background: rgba(149, 165, 166, 0.1);
+  background: linear-gradient(145deg, rgba(149, 165, 166, 0.1), rgba(149, 165, 166, 0.05));
+  transform: scale(0.98);
 }
 
 @keyframes pulse-turn {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.3), 0 8px 25px rgba(241, 196, 15, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(241, 196, 15, 0.5), 0 12px 35px rgba(241, 196, 15, 0.6); }
+  0%, 100% { box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.4), 0 12px 35px rgba(241, 196, 15, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(241, 196, 15, 0.6), 0 16px 45px rgba(241, 196, 15, 0.7); }
+}
+
+@keyframes card-glow {
+  0%, 100% { border-color: #f1c40f; }
+  50% { border-color: #f39c12; }
 }
 
 .player-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
 }
 
 .player-name {
   font-weight: 700;
   color: #ffffff;
-  font-size: 1.2em;
-  letter-spacing: 0.3px;
+  font-size: 1.3em;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .player-status {
-  font-size: 11px;
-  padding: 4px 10px;
+  font-size: 12px;
+  padding: 6px 12px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 600;
   letter-spacing: 0.5px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .player-stats {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
 }
 
 .stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  min-width: 60px;
+  padding: 10px 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  min-width: 70px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.stat:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
 }
 
 .stat .label {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1225,7 +1524,42 @@ onMounted(() => {
 .stat .value {
   font-weight: 800;
   color: #ffffff;
-  font-size: 1.3em;
+  font-size: 1.4em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.player-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.player-actions :deep(.el-button) {
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  width: 100%;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.player-actions :deep(.el-button:hover) {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.player-actions :deep(.el-button:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.player-actions :deep(.el-button:disabled:hover) {
+  transform: none;
+  box-shadow: none;
 }
 
 /* 信息区域 */
@@ -1330,8 +1664,8 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-top: 6px solid #e74c3c;
 }
@@ -1339,7 +1673,7 @@ onMounted(() => {
 .hand-cards {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
   min-height: 200px;
 }
 
@@ -1355,6 +1689,28 @@ onMounted(() => {
   box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
   position: relative;
   overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.hand-card:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-10px) scale(1.05) rotateX(5deg);
+  box-shadow: 0 20px 40px rgba(52, 152, 219, 0.7);
+  z-index: 10;
+}
+
+.hand-card.selected {
+  border-color: #f1c40f;
+  background: linear-gradient(145deg, rgba(241, 196, 15, 0.9), rgba(243, 156, 18, 0.9));
+  box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.5), 0 20px 40px rgba(241, 196, 15, 0.6);
+  animation: card-pulse 1.5s infinite, card-float 3s ease-in-out infinite;
+  transform: translateY(-15px) scale(1.08) rotateX(8deg);
+}
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(-15px) scale(1.08) rotateX(8deg); }
+  50% { transform: translateY(-25px) scale(1.08) rotateX(12deg); }
 }
 
 .hand-card::before {
@@ -1432,11 +1788,15 @@ onMounted(() => {
   color: white;
   font-weight: 600;
   transition: all 0.3s ease;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
 }
 
 .hand-card .card-actions :deep(.el-button:hover) {
   background: rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .empty-hand {
@@ -1484,188 +1844,428 @@ onMounted(() => {
 .player-details {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+  padding: 10px;
+}
+
+.detail-section {
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.detail-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .detail-section h4 {
-  margin-bottom: 10px;
-  color: #303133;
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 1.2em;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-section h4::before {
+  content: '📋';
+  font-size: 1.1em;
 }
 
 .cards-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .detail-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.detail-card:hover {
+  border-color: #409eff;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .detail-card .card-name {
-  font-weight: bold;
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 14px;
+  flex: 1;
 }
 
 .detail-card .card-mp, .detail-card .card-ability {
   font-size: 12px;
-  color: #909399;
+  color: #6c757d;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
 }
 
 .empty {
   text-align: center;
-  color: #c0c4cc;
+  color: #6c757d;
   font-style: italic;
-  padding: 20px;
+  padding: 30px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+  font-size: 14px;
+}
+
+/* 质疑对话框样式优化 */
+.doubt-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.doubt-targets::-webkit-scrollbar {
+  width: 6px;
+}
+
+.doubt-targets::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.doubt-targets::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.doubt-targets::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.doubt-target {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.doubt-target:hover {
+  background-color: #ecf5ff;
+  border-color: #409eff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+.doubt-target.selected {
+  background-color: #ecf5ff;
+  border: 2px solid #409eff;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.doubt-target .player-name {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.doubt-target .player-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: #e9ecef;
+  color: #6c757d;
+  font-weight: 600;
 }
 
 /* 技能对话框样式 */
 .skill-instruction {
-  margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f0f9eb;
-  border-radius: 8px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f9eb 0%, #e6f7ee 100%);
+  border-radius: 12px;
   border-left: 4px solid #67c23a;
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.15);
+  animation: slideIn 0.3s ease-out;
 }
 
 .skill-instruction p {
-  margin: 5px 0;
+  margin: 8px 0;
   color: #606266;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .doubt-cards-list, .played-cards-list, .player-options, .card-options {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
   max-height: 300px;
   overflow-y: auto;
+  padding-right: 8px;
+}
+
+.doubt-cards-list::-webkit-scrollbar, .played-cards-list::-webkit-scrollbar, .player-options::-webkit-scrollbar, .card-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.doubt-cards-list::-webkit-scrollbar-track, .played-cards-list::-webkit-scrollbar-track, .player-options::-webkit-scrollbar-track, .card-options::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.doubt-cards-list::-webkit-scrollbar-thumb, .played-cards-list::-webkit-scrollbar-thumb, .player-options::-webkit-scrollbar-thumb, .card-options::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.doubt-cards-list::-webkit-scrollbar-thumb:hover, .played-cards-list::-webkit-scrollbar-thumb:hover, .player-options::-webkit-scrollbar-thumb:hover, .card-options::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .doubt-card-item, .played-card-item, .player-option, .card-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  padding: 16px 20px;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 10px;
   border: 2px solid #e4e7ed;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.doubt-card-item::before, .played-card-item::before, .player-option::before, .card-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(64, 158, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.doubt-card-item:hover::before, .played-card-item:hover::before, .player-option:hover::before, .card-option:hover::before {
+  left: 100%;
 }
 
 .doubt-card-item:hover, .played-card-item:hover, .player-option:hover, .card-option:hover {
-  background-color: #ecf5ff;
+  background: linear-gradient(145deg, #ecf5ff, #e3f0ff);
   border-color: #409eff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
 }
 
 .doubt-card-item.selected, .played-card-item.selected, .player-option.selected, .card-option.selected {
-  background-color: #ecf5ff;
+  background: linear-gradient(145deg, #ecf5ff, #d6eaff);
   border-color: #409eff;
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(64, 158, 255, 0.15); }
 }
 
 .target-selection {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f0f2f5;
-  border-radius: 8px;
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f2f5 0%, #e6e8eb 100%);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out 0.1s both;
 }
 
 .target-selection p {
-  margin-bottom: 10px;
-  font-weight: bold;
+  margin-bottom: 12px;
+  font-weight: 600;
   color: #303133;
+  font-size: 14px;
 }
 
 .card-selection-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
+  animation: slideIn 0.3s ease-out 0.2s both;
 }
 
 .hand-cards-section, .harmony-cards-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .hand-cards-section h4, .harmony-cards-section h4 {
-  margin: 0 0 10px 0;
+  margin: 0 0 12px 0;
   color: #303133;
   font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e4e7ed;
 }
 
 .empty-message {
   text-align: center;
   color: #c0c4cc;
   font-style: italic;
-  padding: 20px;
+  padding: 30px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px dashed #e4e7ed;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .skill-action {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 20px;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
   border-top: 1px solid #ebeef5;
+  animation: slideIn 0.3s ease-out 0.3s both;
+}
+
+.skill-action :deep(.el-button) {
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.skill-action :deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 技能效果横幅 */
 .skill-effect-banner {
   display: flex;
   align-items: center;
-  padding: 12px 20px;
-  margin-bottom: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.3s ease-out;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), pulse-glow 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.skill-effect-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s;
+}
+
+.skill-effect-banner:hover::before {
+  left: 100%;
 }
 
 .skill-effect-banner.success {
-  background-color: #f0f9eb;
-  border-left: 4px solid #67c23a;
+  background: linear-gradient(135deg, rgba(240, 249, 235, 0.9), rgba(230, 247, 238, 0.9));
+  border-left: 6px solid #67c23a;
   color: #67c23a;
+  box-shadow: 0 4px 20px rgba(103, 194, 58, 0.25);
 }
 
 .skill-effect-banner.error {
-  background-color: #fef0f0;
-  border-left: 4px solid #f56c6c;
+  background: linear-gradient(135deg, rgba(254, 240, 240, 0.9), rgba(252, 227, 227, 0.9));
+  border-left: 6px solid #f56c6c;
   color: #f56c6c;
+  box-shadow: 0 4px 20px rgba(245, 108, 108, 0.25);
 }
 
 .skill-effect-banner.info {
-  background-color: #ecf5ff;
-  border-left: 4px solid #409eff;
+  background: linear-gradient(135deg, rgba(236, 245, 255, 0.9), rgba(227, 243, 255, 0.9));
+  border-left: 6px solid #409eff;
   color: #409eff;
+  box-shadow: 0 4px 20px rgba(64, 158, 255, 0.25);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); }
+  50% { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25); }
 }
 
 .effect-icon {
-  font-size: 20px;
-  margin-right: 12px;
+  font-size: 28px;
+  margin-right: 16px;
+  animation: bounce 1s ease-in-out infinite;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
 }
 
 .effect-message {
   flex: 1;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.5;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .effect-close {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: bold;
   cursor: pointer;
-  padding: 0 5px;
+  padding: 0 10px;
   opacity: 0.7;
-  transition: opacity 0.3s;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
 }
 
 .effect-close:hover {
   opacity: 1;
+  transform: rotate(90deg) scale(1.1);
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes fadeIn {
@@ -1690,48 +2290,72 @@ onMounted(() => {
   }
 }
 
-/* 移动端适配 */
+/* 平板设备适配 */
 @media (max-width: 1024px) {
   .upper-section {
     flex-direction: column;
   }
   
   .ai-players-list {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
   
   .hand-card {
-    width: 140px;
+    width: 160px;
+  }
+  
+  .game-view {
+    width: 95vw;
+    min-width: 0;
   }
 }
 
+/* 小平板和大屏手机适配 */
 @media (max-width: 768px) {
   .game-view {
     padding: 10px;
+    width: 98vw;
   }
   
   .game-info-bar {
     flex-wrap: wrap;
     gap: 10px;
+    padding: 15px;
   }
   
   .ai-players-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
   
   .hand-card {
-    width: 100%;
+    width: 130px;
   }
   
   .harmony-card {
     width: 50px;
     height: 75px;
   }
+  
+  .area-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .area-header h3 {
+    font-size: 1.2em;
+  }
+  
+  .toggle-button {
+    width: 100%;
+  }
 }
 
+/* 手机设备适配 */
 @media (max-width: 480px) {
   .game-view {
     padding: 8px;
+    width: 100vw;
   }
   
   .game-info-bar {
@@ -1746,21 +2370,12 @@ onMounted(() => {
     justify-content: space-between;
   }
   
-  .area-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  
-  .area-header h3 {
-    font-size: 1.2em;
-  }
-  
-  .toggle-button {
-    width: 100%;
+  .ai-players-list {
+    grid-template-columns: 1fr;
   }
   
   .hand-card {
+    width: 100%;
     padding: 15px;
   }
   
@@ -1781,6 +2396,18 @@ onMounted(() => {
     width: 20px;
     height: 20px;
     font-size: 10px;
+  }
+  
+  .info-content {
+    height: 250px;
+  }
+  
+  .lower-section {
+    padding: 20px;
+  }
+  
+  .hand-cards {
+    gap: 15px;
   }
 }
 </style>

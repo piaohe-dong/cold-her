@@ -4,9 +4,13 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/menu',
+      redirect: '/',
+    },
+    {
       path: '/',
       name: 'menu',
-           // 菜单页面
+      // 菜单页面
       component: () => import('../views/GameMenuView.vue'),
     },
     {

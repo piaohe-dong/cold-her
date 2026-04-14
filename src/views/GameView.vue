@@ -756,7 +756,9 @@ const viewPlayerDetails = (player: Player) => {
 
 // 结束游戏
 const endGame = () => {
-  // TODO: 实现结束游戏逻辑
+  // 调用 gameStore 的 endGame 方法来结束游戏并计算获胜者
+  gameStore.endGame()
+  // 跳转到结果页面
   router.push('/result')
 }
 
@@ -1789,14 +1791,25 @@ onMounted(() => {
   font-weight: 600;
   transition: all 0.3s ease;
   border-radius: 12px;
-  padding: 8px 16px;
+  padding: 10px 20px;
   font-size: 14px;
+  min-width: 100px;
 }
 
 .hand-card .card-actions :deep(.el-button:hover) {
   background: rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.hand-card .card-actions :deep(.el-button:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hand-card .card-actions :deep(.el-button:disabled:hover) {
+  transform: none;
+  box-shadow: none;
 }
 
 .empty-hand {

@@ -35,6 +35,28 @@
           </div>
         </div>
         
+        <!-- 混沌模式选择 -->
+        <div class="setting-item">
+          <div class="setting-label">混沌模式</div>
+          <div class="setting-description">启用后，最后一张手牌可通过卡牌能力转移</div>
+          <div class="mode-selector">
+            <div 
+              class="mode-option" 
+              :class="{ 'selected': !enableChaosMode }"
+              @click="enableChaosMode = false"
+            >
+              标准模式
+            </div>
+            <div 
+              class="mode-option" 
+              :class="{ 'selected': enableChaosMode }"
+              @click="enableChaosMode = true"
+            >
+              混沌模式
+            </div>
+          </div>
+        </div>
+
         <!-- 当前设置汇总 -->
         <div class="current-setting-summary">
           <div class="summary-item">
@@ -47,7 +69,7 @@
           </div>
           <div class="summary-item">
             <span class="summary-label">模式：</span>
-            <span class="summary-value">标准模式</span>
+            <span class="summary-value">{{ enableChaosMode ? '混沌模式' : '标准模式' }}</span>
           </div>
         </div>
         
@@ -90,6 +112,8 @@ const gameStore = useGameStore()
 
 // 玩家人数选择
 const playerCount = ref<3 | 4 | 5 | 6>(4)
+// 混沌模式选择
+const enableChaosMode = ref(false)
 
 // 计算目标值的函数
 const getTargetValue = (count: number): number => {
@@ -107,12 +131,12 @@ const targetValue = computed(() => getTargetValue(playerCount.value))
 
 // 开始游戏
 const startGame = () => {
-  // 保存设置到store（默认使用标准模式）
+  // 保存设置到store
   gameStore.settings.playerCount = playerCount.value
-  gameStore.settings.enableChaosMode = false
+  gameStore.settings.enableChaosMode = enableChaosMode.value
   
-  // 初始化游戏（标准模式）
-  gameStore.startGame(playerCount.value, false)
+  // 初始化游戏
+  gameStore.startGame(playerCount.value, enableChaosMode.value)
   
   // 跳转到游戏页面
   router.push('/game')
@@ -239,6 +263,60 @@ const startGame = () => {
   background: rgba(46, 204, 113, 0.15);
   border: 2px solid rgba(46, 204, 113, 0.7);
   box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+}
+
+/* 混沌模式选择 */
+.setting-item {
+  margin-bottom: 30px;
+}
+
+.setting-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.setting-description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.mode-selector {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mode-option {
+  flex: 1;
+  min-width: 150px;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mode-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.mode-option.selected {
+  background: rgba(155, 89, 182, 0.2);
+  border: 2px solid rgba(155, 89, 182, 0.7);
+  box-shadow: 0 6px 16px rgba(155, 89, 182, 0.3);
+  color: #ffffff;
 }
 
 /* 卡牌头部 */

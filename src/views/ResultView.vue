@@ -192,22 +192,34 @@ const players = computed(() => gameStore.players)
 
 // 获取玩家角色（手牌中的身份牌）
 const getPlayerRole = (player: any) => {
-  // TODO: 实现角色获取逻辑
-  // 玩家可能有多张手牌，但只有一张身份牌（犯人、外星人等）
-  // 暂时返回未知
-  return '未知'
+  if (!player || !player.handCards || player.handCards.length === 0) {
+    return '无身份'
+  }
+  
+  // 按优先级排序，取优先级最高的卡牌（数字越小优先级越高）
+  const sortedCards = [...player.handCards].sort((a, b) => a.priority - b.priority)
+  return sortedCards[0]?.name || '无身份'
 }
 
 // 获取玩家被质疑的MP合计值
 const getPlayerDoubtMP = (playerId: string) => {
-  // TODO: 实现被质疑MP计算
-  return 0
+  const doubts = gameStore.doubtArea.filter(item => item.playerId === playerId)
+  const totalMP = doubts.reduce((sum, item) => sum + item.card.mp, 0)
+  // 质疑合计值为负时按0计算
+  return Math.max(totalMP, 0)
 }
 
 // 获取玩家胜利条件
 const getPlayerVictoryCondition = (player: any) => {
-  // TODO: 实现胜利条件获取
-  return '未知'
+  if (!player || !player.handCards || player.handCards.length === 0) {
+    return '无胜利条件'
+  }
+  
+  // 按优先级排序，取优先级最高的卡牌
+  const sortedCards = [...player.handCards].sort((a, b) => a.priority - b.priority)
+  const mainRole = sortedCards[0]
+  
+  return mainRole?.victoryCondition || '无胜利条件'
 }
 
 // 判断玩家是否为监禁者
@@ -220,15 +232,33 @@ const isPlayerWinner = (playerId: string) => {
   return winners.value.some(p => p.id === playerId)
 }
 
-// 出牌记录（模拟数据）
+// 出牌记录（真实数据）
 const playHistory = computed(() => {
-  // TODO: 实现真实的出牌记录
-  return [
-    { playerName: '玩家', action: '调和', cardName: '学生会长', cardMP: 3, location: '调和区域' },
-    { playerName: 'AI1', action: '质疑', cardName: '风纪委员', cardMP: 1, target: '玩家' },
-    { playerName: 'AI2', action: '特技', cardName: '班长', cardMP: 2, actionDetail: '和玩家互换手牌' }
-  ]
+  return gameStore.playRecords.map((record, index) => {
+    const actionMap: Record<string, string> = {
+      'skill': '特技',
+      'harmony': '调和',
+      'doubt': '质疑'
+    }
+    
+    const result: any = {
+      playerName: record.playerName,
+      action: actionMap[record.action] || record.action,
+      cardName: record.card.name,
+      cardMP: record.card.mp,
+      location: record.action === 'harmony' ? '调和区域' : undefined,
+      target: record.targetPlayerId ? getPlayerName(record.targetPlayerId) : undefined
+    }
+    
+    return result
+  })
 })
+
+// 根据玩家ID获取玩家名称
+const getPlayerName = (playerId: string) => {
+  const player = gameStore.players.find(p => p.id === playerId)
+  return player?.name || '未知玩家'
+}
 
 // 再玩一次
 const playAgain = () => {

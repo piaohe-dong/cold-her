@@ -757,10 +757,10 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 执行感染者效果：夺走1张调和位置的牌
-  const executeInfectedEffect = (playerIndex: number) => {
+  const executeInfectedEffect = (playerIndex: number): boolean => {
     const player = players.value[playerIndex]
     if (!player || !infectedEffect.value || infectedEffect.value.playerId !== player.id) {
-      return
+      return false
     }
     
     // 从调和区域夺走一张牌（夺走最后一张放入的牌）
@@ -780,13 +780,14 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除感染者效果
     infectedEffect.value = null
+    return true
   }
 
   // 执行共犯效果：移动1张质疑位置的牌
-  const executeAccompliceEffect = (playerIndex: number, doubtIndex?: number, targetPlayerId?: string) => {
+  const executeAccompliceEffect = (playerIndex: number, doubtIndex?: number, targetPlayerId?: string): boolean => {
     const player = players.value[playerIndex]
     if (!player || doubtArea.value.length === 0) {
-      return
+      return false
     }
     
     let selectedDoubtIndex = doubtIndex
@@ -799,7 +800,7 @@ export const useGameStore = defineStore('game', () => {
     
     if (selectedDoubtIndex < 0 || selectedDoubtIndex >= doubtArea.value.length) {
       addLog('错误：选择的质疑牌索引无效')
-      return
+      return false
     }
     
     const doubtItem = doubtArea.value[selectedDoubtIndex]!
@@ -811,7 +812,7 @@ export const useGameStore = defineStore('game', () => {
     
     if (otherPlayers.length === 0) {
       addLog('没有其他玩家可以移动质疑牌，共犯能力无效')
-      return
+      return false
     }
     
     // 如果没有提供目标玩家，随机选择
@@ -823,7 +824,7 @@ export const useGameStore = defineStore('game', () => {
     const targetPlayer = players.value.find(p => p.id === selectedTargetPlayerId)
     if (!targetPlayer || targetPlayer.id === doubtItem.playerId || targetPlayer.isExited) {
       addLog('错误：选择的目标玩家无效')
-      return
+      return false
     }
     
     // 更新质疑牌的目标
@@ -833,12 +834,13 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除pending状态
     pendingSkillAction.value = null
+    return true
   }
 
   // 执行班长效果：和1名玩家互换1张手牌
-  const executeMonitorEffect = (playerIndex: number, targetPlayerId?: string) => {
+  const executeMonitorEffect = (playerIndex: number, targetPlayerId?: string): boolean => {
     const player = players.value[playerIndex]
-    if (!player) return
+    if (!player) return false
     
     // 找到可以互换手牌的其他玩家
     const otherPlayers = players.value.filter(p => 
@@ -847,7 +849,7 @@ export const useGameStore = defineStore('game', () => {
     
     if (otherPlayers.length === 0) {
       addLog('没有其他玩家可以互换手牌，班长能力无效')
-      return
+      return false
     }
     
     // 选择目标玩家
@@ -857,7 +859,7 @@ export const useGameStore = defineStore('game', () => {
       targetPlayer = players.value.find(p => p.id === targetPlayerId)
       if (!targetPlayer || targetPlayer.isExited || targetPlayer.handCards.length === 0) {
         addLog('错误：选择的目标玩家无效')
-        return
+        return false
       }
     } else {
       // 随机选择一个目标玩家（AI使用）
@@ -867,7 +869,7 @@ export const useGameStore = defineStore('game', () => {
     // 随机选择一张自己的手牌和目标玩家的手牌
     if (player.handCards.length === 0 || targetPlayer.handCards.length === 0) {
       addLog('手牌不足，班长能力无效')
-      return
+      return false
     }
     
     const playerCardIndex = Math.floor(Math.random() * player.handCards.length)
@@ -891,12 +893,13 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除pending状态
     pendingSkillAction.value = null
+    return true
   }
 
   // 执行风纪委员效果：查看某人的全部手牌
-  const executeDisciplineEffect = (playerIndex: number, targetPlayerId?: string) => {
+  const executeDisciplineEffect = (playerIndex: number, targetPlayerId?: string): boolean => {
     const player = players.value[playerIndex]
-    if (!player) return
+    if (!player) return false
     
     // 找到可以查看手牌的其他玩家
     const otherPlayers = players.value.filter(p => 
@@ -905,7 +908,7 @@ export const useGameStore = defineStore('game', () => {
     
     if (otherPlayers.length === 0) {
       addLog('没有其他玩家可以查看手牌，风纪委员能力无效')
-      return
+      return false
     }
     
     // 选择目标玩家
@@ -915,7 +918,7 @@ export const useGameStore = defineStore('game', () => {
       targetPlayer = players.value.find(p => p.id === targetPlayerId)
       if (!targetPlayer || targetPlayer.isExited) {
         addLog('错误：选择的目标玩家无效')
-        return
+        return false
       }
     } else {
       // 随机选择一个目标玩家（AI使用）
@@ -931,12 +934,13 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除pending状态
     pendingSkillAction.value = null
+    return true
   }
 
   // 执行保健委员效果：夺走1张已使用的牌
-  const executeHealthEffect = (playerIndex: number, cardIndex?: number) => {
+  const executeHealthEffect = (playerIndex: number, cardIndex?: number): boolean => {
     const player = players.value[playerIndex]
-    if (!player) return
+    if (!player) return false
     
     // 收集所有已使用的牌（所有玩家的playedCards）
     const allPlayedCards: { playerId: string, playerName: string, card: Card, playerIndex: number }[] = []
@@ -948,7 +952,7 @@ export const useGameStore = defineStore('game', () => {
     
     if (allPlayedCards.length === 0) {
       addLog('没有已使用的牌，保健委员能力无效')
-      return
+      return false
     }
     
     // 选择要夺走的牌
@@ -966,7 +970,7 @@ export const useGameStore = defineStore('game', () => {
     const originalPlayer = players.value[selected.playerIndex]
     if (!originalPlayer) {
       addLog('错误：找不到原玩家')
-      return
+      return false
     }
     originalPlayer.playedCards = originalPlayer.playedCards.filter(c => c.id !== selected.card.id)
     
@@ -980,12 +984,13 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除pending状态
     pendingSkillAction.value = null
+    return true
   }
 
   // 执行大小姐效果：夺走他人1张手牌并返还1张
-  const executeOjousamaEffect = (playerIndex: number, targetPlayerId?: string) => {
+  const executeOjousamaEffect = (playerIndex: number, targetPlayerId?: string): boolean => {
     const player = players.value[playerIndex]
-    if (!player) return
+    if (!player) return false
     
     // 找到可以交换手牌的其他玩家
     const otherPlayers = players.value.filter(p => 
@@ -994,7 +999,7 @@ export const useGameStore = defineStore('game', () => {
     
     if (otherPlayers.length === 0 || player.handCards.length === 0) {
       addLog('无法执行大小姐能力：手牌不足或无目标玩家')
-      return
+      return false
     }
     
     // 选择目标玩家
@@ -1004,7 +1009,7 @@ export const useGameStore = defineStore('game', () => {
       targetPlayer = players.value.find(p => p.id === targetPlayerId)
       if (!targetPlayer || targetPlayer.isExited || targetPlayer.handCards.length === 0) {
         addLog('错误：选择的目标玩家无效')
-        return
+        return false
       }
     } else {
       // 随机选择一个目标玩家（AI使用）
@@ -1036,16 +1041,17 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除pending状态
     pendingSkillAction.value = null
+    return true
   }
 
   // 执行归宅部效果：1张手牌交换1张调和位置的牌
-  const executeGoHomeEffect = (playerIndex: number, handCardIndex?: number, harmonyCardIndex?: number) => {
+  const executeGoHomeEffect = (playerIndex: number, handCardIndex?: number, harmonyCardIndex?: number): boolean => {
     const player = players.value[playerIndex]
-    if (!player) return
+    if (!player) return false
     
     if (player.handCards.length === 0 || harmonyArea.value.length === 0) {
       addLog('无法执行归宅部能力：手牌或调和区域牌不足')
-      return
+      return false
     }
     
     // 选择手牌
@@ -1087,6 +1093,7 @@ export const useGameStore = defineStore('game', () => {
     
     // 清除pending状态
     pendingSkillAction.value = null
+    return true
   }
 
   // 移动到下一个玩家
@@ -1424,40 +1431,40 @@ export const useGameStore = defineStore('game', () => {
       if (role.id === 'prisoner') {
         const player = players.value.find(p => p.id === playerId)
         if (player && !prisonerIds.includes(playerId)) {
+          // 检查是否有共犯
+          const accomplicePlayers = players.value.filter(p => {
+            const pRole = playerRoles.get(p.id)
+            return pRole && pRole.id === 'accomplice'
+          })
+          
+          // 犯人和共犯都获胜
           winners.push(player)
           addLog(`${player.name}（犯人）不被监禁，获得胜利（优先级3）`)
-          // 犯人获胜需要检查共犯
-          // 查找是否有共犯
-          for (const [accomplicePlayerId, accompliceRole] of playerRoles.entries()) {
-            if (accompliceRole.id === 'accomplice') {
-              const accomplicePlayer = players.value.find(p => p.id === accomplicePlayerId)
-              if (accomplicePlayer) {
-                winners.push(accomplicePlayer)
-                addLog(`${accomplicePlayer.name}（共犯）因犯人胜利而获得胜利（优先级3）`)
-              }
-            }
-          }
-          return winners // 犯人/共犯获胜，后续不再判定
+          
+          accomplicePlayers.forEach(accomplice => {
+            winners.push(accomplice)
+            addLog(`${accomplice.name}（共犯）获得胜利（优先级3）`)
+          })
+          
+          return winners // 犯人和共犯获胜，后续不再判定
         }
       }
     }
     
-    // 优先级3：共犯 - 犯人胜利（已在上面处理）
-    
-    // 优先级4：调和成功角色 - 调和成功
+    // 优先级4：调和成功阵营
     if (harmonySuccess) {
-      const harmonyRoles = ['president', 'monitor', 'excellent', 'discipline', 'health', 'library', 'ojousama', 'news']
-      for (const [playerId, role] of playerRoles.entries()) {
-        if (harmonyRoles.includes(role.id)) {
-          const player = players.value.find(p => p.id === playerId)
-          if (player) {
-            winners.push(player)
-            addLog(`${player.name}（${role.name}）调和成功，获得胜利（优先级4）`)
-          }
+      // 所有非犯人和非共犯的玩家获胜
+      players.value.forEach(player => {
+        const role = playerRoles.get(player.id)
+        if (!role || (role.id !== 'prisoner' && role.id !== 'accomplice')) {
+          winners.push(player)
         }
-      }
+      })
+      
       if (winners.length > 0) {
-        return winners // 调和成功角色获胜，后续不再判定
+        const winnerNames = winners.map(p => p.name).join(', ')
+        addLog(`${winnerNames} 调和成功，获得胜利（优先级4）`)
+        return winners
       }
     }
     
@@ -1465,21 +1472,16 @@ export const useGameStore = defineStore('game', () => {
     for (const [playerId, role] of playerRoles.entries()) {
       if (role.id === 'goHome') {
         const player = players.value.find(p => p.id === playerId)
-        // 归宅部胜利条件：无任何人胜利
-        // 如果执行到这里还没有获胜者，则归宅部获胜
-        if (player && winners.length === 0) {
+        if (player) {
           winners.push(player)
           addLog(`${player.name}（归宅部）无任何人胜利，获得胜利（优先级5）`)
-          return winners
+          return winners // 归宅部获胜，后续不再判定
         }
       }
     }
     
-    // 全灭结局：无人满足胜利条件
-    if (winners.length === 0) {
-      addLog('全灭结局：无人满足胜利条件')
-    }
-    
+    // 无获胜者
+    addLog('无获胜者')
     return winners
   }
 
@@ -1489,14 +1491,12 @@ export const useGameStore = defineStore('game', () => {
     currentPlayerIndex,
     roundCount,
     settings,
-    cards,
     players,
     harmonyArea,
     doubtArea,
-    cardPool,
     gameLog,
     playRecords,
-    infectedEffect,
+    gameWinners,
     pendingSkillAction,
     
     // 计算属性
@@ -1508,25 +1508,21 @@ export const useGameStore = defineStore('game', () => {
     
     // 方法
     getCardImage,
+    initGame,
     startGame,
     endGame,
     backToMenu,
-    initGame,
     useCardAsSkill,
     useCardAsHarmony,
     useCardAsDoubt,
     nextPlayer,
-    getPlayerDoubtMP,
-    getPrisoners,
-    getWinners,
-    addLog,
-    // 技能执行方法
     executeInfectedEffect,
     executeAccompliceEffect,
     executeMonitorEffect,
     executeDisciplineEffect,
     executeHealthEffect,
     executeOjousamaEffect,
-    executeGoHomeEffect
+    executeGoHomeEffect,
+    getWinners
   }
 })
